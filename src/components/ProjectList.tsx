@@ -1,5 +1,6 @@
 import './ProjectList.css'
 import { Project } from '../types'
+import { calculateProgress } from '../lib/progress'
 
 interface ProjectListProps {
   projects: Project[]
@@ -25,20 +26,38 @@ export function ProjectList({
 
   return (
     <div className="project-list">
-      {projects.map((project) => (
-        <button
-          key={project.id}
-          onClick={() => onSelectProject(project.id)}
-          className={`project-list-item ${
-            currentProjectId === project.id ? 'active' : ''
-          }`}
-        >
-          <div className="project-list-name">{project.name}</div>
-          <div className="project-list-tasks">
-            {project.tasks.length} tasks
-          </div>
-        </button>
-      ))}
+      {projects.map((project) => {
+        const progress = calculateProgress(project.tasks)
+        const isComplete = progress.progressPercentage === 100 && project.tasks.length > 0
+        
+        return (
+          <button
+            key={project.id}
+            onClick={() => onSelectProject(project.id)}
+            className={`project-list-item ${
+              currentProjectId === project.id ? 'active' : ''
+            } ${isComplete ? 'completed' : ''}`}
+          >
+            <div className="project-list-name">
+              {isComplete && (
+                <span className="completion-indicator">
+                  <input
+                    type="checkbox"
+                    checked={true}
+                    readOnly
+                    className="project-checkbox"
+                    aria-label="Project completed"
+                  />
+                </span>
+              )}
+              {project.name}
+            </div>
+            <div className="project-list-tasks">
+              {project.tasks.length} tasks · {progress.progressPercentage}%
+            </div>
+          </button>
+        )
+      })}
     </div>
   )
 }

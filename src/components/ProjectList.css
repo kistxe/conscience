@@ -37,6 +37,39 @@
   border-color: #3b82f6;
 }
 
+.project-list-item.completed {
+  background: #f0fdf4;
+  border-color: #86efac;
+}
+
+.project-list-item.completed:hover {
+  background: #dcfce7;
+  border-color: #4ade80;
+}
+
+.project-list-item.completed.active {
+  background: #10b981;
+  border-color: #10b981;
+}
+
+.completion-indicator {
+  display: inline-flex;
+  align-items: center;
+  margin-right: 0.5rem;
+}
+
+.project-checkbox {
+  width: 18px;
+  height: 18px;
+  cursor: default;
+  accent-color: #10b981;
+}
+
+.project-list-item.completed.active .project-checkbox {
+  accent-color: white;
+  filter: brightness(1.2);
+}
+
 .project-list-name {
   font-weight: 600;
   color: #333;
