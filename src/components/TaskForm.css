@@ -13,6 +13,7 @@
   cursor: pointer;
   transition: all 0.2s ease;
   font-size: 0.95rem;
+  margin-bottom: 0.75rem;
 }
 
 .add-task-btn:hover {
