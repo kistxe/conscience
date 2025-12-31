@@ -1,9 +1,28 @@
 .motivational-message {
   padding: 1.5rem;
-  background: linear-gradient(135deg, #f0f9ff 0%, #f0fdf4 100%);
+  background: linear-gradient(135deg,
+    #f3f4f6 0%,
+    #ececec 18%,
+    rgba(255, 215, 0, 0.15) 32%,
+    rgba(255, 105, 180, 0.12) 46%,
+    rgba(135, 206, 235, 0.15) 60%,
+    rgba(152, 251, 152, 0.15) 74%,
+    #f2f2f2 88%,
+    #ededed 100%);
+  background-size: 160% 160%;
+  animation: chromeShift 16s ease-in-out infinite, slideIn 0.4s ease-out;
   border-radius: 12px;
-  border-left: 4px solid #3b82f6;
-  animation: slideIn 0.4s ease-out;
+  border-left: 4px solid #b0b3b8;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+@keyframes chromeShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 @keyframes slideIn {
