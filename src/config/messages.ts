@@ -89,9 +89,11 @@ export function getMotivationalMessage(guiltPercentage: number): string {
  * Get the color for guilt meter based on guilt percentage
  */
 export function getGuiltMeterColor(guiltPercentage: number): string {
-  if (guiltPercentage <= 10) return '#10b981' // Emerald - guilt-free
-  if (guiltPercentage <= 25) return '#3b82f6' // Blue - light guilt
-  if (guiltPercentage <= 50) return '#f59e0b' // Amber - moderate guilt
-  if (guiltPercentage <= 75) return '#ef4444' // Red - higher guilt
-  return '#7f1d1d' // Dark red - significant guilt
+  // Match the chrome/rainbow accents from the motivational card
+  if (guiltPercentage >= 100) return '#a166d3' // bolder blend of pink and blue
+  if (guiltPercentage <= 10) return '#d9d9d9' // soft silver
+  if (guiltPercentage <= 25) return '#98fb98' // pastel mint
+  if (guiltPercentage <= 50) return '#87ceeb' // sky blue
+  if (guiltPercentage <= 75) return '#ffd700' // warm gold
+  return '#ff69b4' // soft pink
 }
