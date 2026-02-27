@@ -1,5 +1,8 @@
 import React, { createContext, useState, useCallback, useEffect, ReactNode } from 'react'
 
+const apiBase = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+const apiUrl = (path: string) => `${apiBase}${path}`
+
 interface User {
   id: string
   email: string
@@ -32,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const savedToken = localStorage.getItem('token')
       if (savedToken) {
         try {
-          const response = await fetch('/api/auth/me', {
+          const response = await fetch(apiUrl('/api/auth/me'), {
             headers: { 'Authorization': `Bearer ${savedToken}` },
           })
           if (response.ok) {
@@ -56,7 +59,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const login = useCallback(async (email: string, password: string) => {
-    const response = await fetch('/api/auth/login', {
+    const response = await fetch(apiUrl('/api/auth/login'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password }),
@@ -73,7 +76,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [])
 
   const signup = useCallback(async (email: string, name: string, password: string) => {
-    const response = await fetch('/api/auth/signup', {
+    const response = await fetch(apiUrl('/api/auth/signup'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, name, password }),

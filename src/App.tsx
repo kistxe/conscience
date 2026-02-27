@@ -16,6 +16,9 @@ import { TaskList } from './components/TaskList'
 import { MotivationalMessage } from './components/MotivationalMessage'
 import './App.css'
 
+const apiBase = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+const apiUrl = (path: string) => `${apiBase}${path}`
+
 export function App() {
   const { isAuthenticated, user, token, logout, isLoading: authLoading } = useAuth()
   const [projects, setProjects] = useState<Project[]>([])
@@ -35,7 +38,7 @@ export function App() {
     if (!token || !user) return
     try {
       setLoading(true)
-      const response = await fetch('/api/projects', {
+      const response = await fetch(apiUrl('/api/projects'), {
         headers: getAuthHeaders(),
       })
       if (!response.ok) {
@@ -98,7 +101,7 @@ export function App() {
     deadline?: string
   ) => {
     try {
-      const response = await fetch('/api/projects', {
+      const response = await fetch(apiUrl('/api/projects'), {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ name, description, reward, deadline }),
@@ -118,7 +121,7 @@ export function App() {
 
   const handleDeleteProject = async (projectId: string) => {
     try {
-      const response = await fetch(`/api/projects/${projectId}`, {
+      const response = await fetch(apiUrl(`/api/projects/${projectId}`), {
         method: 'DELETE',
         headers: getAuthHeaders(),
       })
@@ -142,7 +145,7 @@ export function App() {
     if (!currentProject) return
 
     try {
-      const response = await fetch(`/api/projects/${currentProject.id}/tasks`, {
+      const response = await fetch(apiUrl(`/api/projects/${currentProject.id}/tasks`), {
         method: 'POST',
         headers: getAuthHeaders(),
         body: JSON.stringify({ title, description, weight }),
@@ -165,7 +168,7 @@ export function App() {
     if (!currentProject) return
 
     try {
-      const response = await fetch(`/api/tasks/${taskId}/toggle`, {
+      const response = await fetch(apiUrl(`/api/tasks/${taskId}/toggle`), {
         method: 'PATCH',
         headers: getAuthHeaders(),
       })
@@ -192,7 +195,7 @@ export function App() {
     if (!currentProject) return
 
     try {
-      const response = await fetch(`/api/tasks/${taskId}`, {
+      const response = await fetch(apiUrl(`/api/tasks/${taskId}`), {
         method: 'DELETE',
         headers: getAuthHeaders(),
       })
