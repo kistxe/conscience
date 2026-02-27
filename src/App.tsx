@@ -1,10 +1,12 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useEffect, useCallback } from 'react'
 import { Project, Task } from './types'
 import { calculateProgress } from './lib/progress'
 import {
   getMotivationalMessage,
   getGuiltMeterColor,
 } from './config/messages'
+import { useAuth } from './context/AuthContext'
+import { Login } from './pages/Login'
 import { ProjectForm } from './components/ProjectForm'
 import { ProjectList } from './components/ProjectList'
 import { ProjectHeader } from './components/ProjectHeader'
@@ -15,21 +17,31 @@ import { MotivationalMessage } from './components/MotivationalMessage'
 import './App.css'
 
 export function App() {
+  const { isAuthenticated, user, token, logout, isLoading: authLoading } = useAuth()
   const [projects, setProjects] = useState<Project[]>([])
   const [currentProjectId, setCurrentProjectId] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
 
-  // Load projects on mount
-  useEffect(() => {
-    loadProjects()
-  }, [])
+  const getAuthHeaders = useCallback(
+    () => ({
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${token}`,
+    }),
+    [token]
+  )
 
-  const loadProjects = async () => {
+  const loadProjects = useCallback(async () => {
+    if (!token || !user) return
     try {
       setLoading(true)
-      const response = await fetch('/api/projects')
-      if (!response.ok) throw new Error('Failed to load projects')
+      const response = await fetch('/api/projects', {
+        headers: getAuthHeaders(),
+      })
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.detail || 'Failed to load projects')
+      }
       const data = await response.json()
       setProjects(data)
       if (data.length > 0) {
@@ -41,7 +53,16 @@ export function App() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [token, user, getAuthHeaders])
+
+  // Load projects when authenticated and user is loaded
+  useEffect(() => {
+    if (isAuthenticated && user && token) {
+      loadProjects()
+    } else {
+      setLoading(false)
+    }
+  }, [isAuthenticated, user, token, loadProjects])
 
   const currentProject = useMemo(
     () => projects.find((p) => p.id === currentProjectId),
@@ -79,7 +100,7 @@ export function App() {
     try {
       const response = await fetch('/api/projects', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ name, description, reward, deadline }),
       })
       if (!response.ok) throw new Error('Failed to create project')
@@ -99,6 +120,7 @@ export function App() {
     try {
       const response = await fetch(`/api/projects/${projectId}`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
       })
       if (!response.ok) throw new Error('Failed to delete project')
       const updatedProjects = projects.filter((p) => p.id !== projectId)
@@ -122,7 +144,7 @@ export function App() {
     try {
       const response = await fetch(`/api/projects/${currentProject.id}/tasks`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify({ title, description, weight }),
       })
       if (!response.ok) throw new Error('Failed to create task')
@@ -145,6 +167,7 @@ export function App() {
     try {
       const response = await fetch(`/api/tasks/${taskId}/toggle`, {
         method: 'PATCH',
+        headers: getAuthHeaders(),
       })
       if (!response.ok) throw new Error('Failed to toggle task')
       const updatedTask = await response.json()
@@ -171,6 +194,7 @@ export function App() {
     try {
       const response = await fetch(`/api/tasks/${taskId}`, {
         method: 'DELETE',
+        headers: getAuthHeaders(),
       })
       if (!response.ok) throw new Error('Failed to delete task')
       setProjects(
@@ -188,28 +212,37 @@ export function App() {
     }
   }
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="app">
         <header className="app-header">
-          <h1>Guilt Meter</h1>
-          <p>Track your projects and lift the mental load</p>
+          <div className="header-left">
+            <h1>Guilt Meter</h1>
+            <p>Track your projects and lift the mental load</p>
+          </div>
         </header>
-        <div className="app-container">
-          <main className="app-main" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-            <p>Loading projects...</p>
-          </main>
+        <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
+          <p>Loading...</p>
         </div>
       </div>
     )
   }
 
-  return (
+  if (!isAuthenticated) {
+    return <Login />
+  }
+
+return (
     <div className="app">
       <header className="app-header">
-        <h1>Guilt Meter</h1>
-        <p>Track your projects and lift the mental load</p>
-        {error && <p style={{ color: 'red', marginTop: '0.5rem' }}>Error: {error}</p>}
+        <div className="header-left">
+          <h1>Guilt Meter</h1>
+          <p>Track your projects and lift the mental load</p>
+        </div>
+        <div className="header-right">
+          {user && <span className="user-info">Hello, {user.username}!</span>}
+          <button onClick={logout} className="btn-logout">Logout</button>
+        </div>
       </header>
 
       <div className="app-container">
@@ -223,7 +256,11 @@ export function App() {
         </aside>
 
         <main className="app-main">
-          {currentProject ? (
+          {loading ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%' }}>
+              <p>Loading projects...</p>
+            </div>
+          ) : currentProject ? (
             <div className="project-view">
               <ProjectHeader
                 project={currentProject}
@@ -283,6 +320,7 @@ export function App() {
               <p>Create a new project or select one from the sidebar to get started</p>
             </div>
           )}
+          {error && <p style={{ color: 'red', marginTop: '1rem' }}>Error: {error}</p>}
         </main>
       </div>
     </div>

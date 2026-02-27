@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, Session, joinedload
@@ -7,8 +7,12 @@ from datetime import datetime
 from typing import Optional
 import uuid
 
-from models import Base, ProjectModel, TaskModel
-from schemas import ProjectCreate, ProjectResponse, TaskCreate, TaskResponse
+from models import Base, ProjectModel, TaskModel, UserModel
+from schemas import (
+    ProjectCreate, ProjectResponse, TaskCreate, TaskResponse,
+    UserCreate, UserLogin, UserResponse, TokenResponse
+)
+from auth import hash_password, verify_password, create_access_token, decode_token
 
 # Database setup
 DATABASE_URL = "sqlite:///./guilt_tracker.db"
@@ -23,7 +27,7 @@ app = FastAPI(title="Guilt Tracker API")
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:4173"],  # Vite dev/preview ports
+    allow_origins=["http://localhost:5173", "http://localhost:4173", "http://localhost:5174"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -37,13 +41,93 @@ def get_db_session():
     finally:
         db.close()
 
+def get_current_user(authorization: Optional[str] = Header(None)) -> dict:
+    """Extract and validate JWT token from Authorization header"""
+    if not authorization:
+        raise HTTPException(status_code=401, detail="Missing authorization header")
+    
+    try:
+        scheme, token = authorization.split()
+        if scheme.lower() != "bearer":
+            raise HTTPException(status_code=401, detail="Invalid authorization scheme")
+    except ValueError:
+        raise HTTPException(status_code=401, detail="Invalid authorization header")
+    
+    payload = decode_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    
+    return {"user_id": user_id, "email": payload.get("email")}
+
+# ===== AUTH ENDPOINTS =====
+
+@app.post("/api/auth/signup", response_model=TokenResponse)
+def signup(user: UserCreate):
+    with get_db_session() as db:
+        # Check if email already exists
+        existing = db.query(UserModel).filter(
+            UserModel.email == user.email
+        ).first()
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already registered")
+        
+        # Create new user
+        user_id = str(uuid.uuid4())
+        db_user = UserModel(
+            id=user_id,
+            email=user.email,
+            name=user.name,
+            hashed_password=hash_password(user.password)
+        )
+        db.add(db_user)
+        db.commit()
+        db.refresh(db_user)
+        
+        # Create token
+        access_token = create_access_token(data={"sub": user_id, "email": user.email})
+        
+        return TokenResponse(
+            access_token=access_token,
+            token_type="bearer",
+            user=UserResponse.model_validate(db_user)
+        )
+
+@app.post("/api/auth/login", response_model=TokenResponse)
+def login(credentials: UserLogin):
+    with get_db_session() as db:
+        db_user = db.query(UserModel).filter(UserModel.email == credentials.email).first()
+        
+        if not db_user or not verify_password(credentials.password, db_user.hashed_password):
+            raise HTTPException(status_code=401, detail="Invalid email or password")
+        
+        access_token = create_access_token(data={"sub": db_user.id, "email": db_user.email})
+        
+        return TokenResponse(
+            access_token=access_token,
+            token_type="bearer",
+            user=UserResponse.model_validate(db_user)
+        )
+
+@app.get("/api/auth/me", response_model=UserResponse)
+def get_current_user_info(current_user: dict = Depends(get_current_user)):
+    with get_db_session() as db:
+        user = db.query(UserModel).filter(UserModel.id == current_user["user_id"]).first()
+        if not user:
+            raise HTTPException(status_code=404, detail="User not found")
+        return UserResponse.model_validate(user)
+
 # ===== PROJECT ENDPOINTS =====
 
 @app.post("/api/projects", response_model=ProjectResponse)
-def create_project(project: ProjectCreate):
+def create_project(project: ProjectCreate, current_user: dict = Depends(get_current_user)):
     with get_db_session() as db:
         db_project = ProjectModel(
             id=str(uuid.uuid4()),
+            user_id=current_user["user_id"],
             name=project.name,
             description=project.description,
             reward=project.reward,
@@ -53,30 +137,36 @@ def create_project(project: ProjectCreate):
         db.add(db_project)
         db.commit()
         db.refresh(db_project)
-        # Eagerly load tasks before session closes
         _ = db_project.tasks
         return ProjectResponse.model_validate(db_project)
 
 @app.get("/api/projects", response_model=list[ProjectResponse])
-def list_projects():
+def list_projects(current_user: dict = Depends(get_current_user)):
     with get_db_session() as db:
-        projects = db.query(ProjectModel).options(joinedload(ProjectModel.tasks)).all()
-        # Convert to dict to detach from session
+        projects = db.query(ProjectModel).options(joinedload(ProjectModel.tasks)).filter(
+            ProjectModel.user_id == current_user["user_id"]
+        ).all()
         result = [ProjectResponse.model_validate(p) for p in projects]
         return result
 
 @app.get("/api/projects/{project_id}", response_model=ProjectResponse)
-def get_project(project_id: str):
+def get_project(project_id: str, current_user: dict = Depends(get_current_user)):
     with get_db_session() as db:
-        project = db.query(ProjectModel).options(joinedload(ProjectModel.tasks)).filter(ProjectModel.id == project_id).first()
+        project = db.query(ProjectModel).options(joinedload(ProjectModel.tasks)).filter(
+            ProjectModel.id == project_id,
+            ProjectModel.user_id == current_user["user_id"]
+        ).first()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
         return ProjectResponse.model_validate(project)
 
 @app.delete("/api/projects/{project_id}")
-def delete_project(project_id: str):
+def delete_project(project_id: str, current_user: dict = Depends(get_current_user)):
     with get_db_session() as db:
-        project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+        project = db.query(ProjectModel).filter(
+            ProjectModel.id == project_id,
+            ProjectModel.user_id == current_user["user_id"]
+        ).first()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
         db.delete(project)
@@ -86,9 +176,12 @@ def delete_project(project_id: str):
 # ===== TASK ENDPOINTS =====
 
 @app.post("/api/projects/{project_id}/tasks", response_model=TaskResponse)
-def create_task(project_id: str, task: TaskCreate):
+def create_task(project_id: str, task: TaskCreate, current_user: dict = Depends(get_current_user)):
     with get_db_session() as db:
-        project = db.query(ProjectModel).filter(ProjectModel.id == project_id).first()
+        project = db.query(ProjectModel).filter(
+            ProjectModel.id == project_id,
+            ProjectModel.user_id == current_user["user_id"]
+        ).first()
         if not project:
             raise HTTPException(status_code=404, detail="Project not found")
         
@@ -106,9 +199,12 @@ def create_task(project_id: str, task: TaskCreate):
         return TaskResponse.model_validate(db_task)
 
 @app.patch("/api/tasks/{task_id}/toggle")
-def toggle_task(task_id: str):
+def toggle_task(task_id: str, current_user: dict = Depends(get_current_user)):
     with get_db_session() as db:
-        task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
+        task = db.query(TaskModel).join(ProjectModel).filter(
+            TaskModel.id == task_id,
+            ProjectModel.user_id == current_user["user_id"]
+        ).first()
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
         task.completed = not task.completed
@@ -117,9 +213,12 @@ def toggle_task(task_id: str):
         return TaskResponse.model_validate(task)
 
 @app.delete("/api/tasks/{task_id}")
-def delete_task(task_id: str):
+def delete_task(task_id: str, current_user: dict = Depends(get_current_user)):
     with get_db_session() as db:
-        task = db.query(TaskModel).filter(TaskModel.id == task_id).first()
+        task = db.query(TaskModel).join(ProjectModel).filter(
+            TaskModel.id == task_id,
+            ProjectModel.user_id == current_user["user_id"]
+        ).first()
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
         db.delete(task)

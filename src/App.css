@@ -28,8 +28,15 @@ body {
   background: #000000;
   color: white;
   padding: 2rem;
-  text-align: center;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-left {
+  text-align: center;
+  flex: 1;
 }
 
 .app-header h1 {
@@ -41,6 +48,36 @@ body {
   margin: 0.5rem 0 0 0;
   font-size: 1.1rem;
   opacity: 0.95;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.user-info {
+  font-size: 0.95rem;
+  opacity: 0.9;
+}
+
+.btn-logout {
+  padding: 0.5rem 1rem;
+  background-color: #dc2626;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.3s;
+}
+
+.btn-logout:hover {
+  background-color: #b91c1c;
+}
+
+.btn-logout:active {
+  background-color: #991b1b;
 }
 
 .app-container {
