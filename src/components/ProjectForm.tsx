@@ -75,6 +75,7 @@ export function ProjectForm({ onAddProject }: ProjectFormProps) {
             value={deadline}
             onChange={(e) => setDeadline(e.target.value)}
             className="form-input"
+            min={new Date().getFullYear() + '-01-01'}
           />
           <div className="form-actions">
             <button type="submit" className="submit-btn">
