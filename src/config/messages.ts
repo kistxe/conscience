@@ -3,7 +3,7 @@
  * Messages are non-shaming and supportive in tone
  */
 
-import { MotivationalMessage } from './types'
+import { MotivationalMessage } from '../types'
 
 export const motivationalMessages: MotivationalMessage[] = [
   {

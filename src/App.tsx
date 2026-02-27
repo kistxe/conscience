@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback } from 'react'
-import { Project, Task } from './types'
+import { Project } from './types'
 import { calculateProgress } from './lib/progress'
 import {
   getMotivationalMessage,

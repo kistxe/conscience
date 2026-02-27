@@ -3,7 +3,7 @@
  * Separated from UI for testability and reusability
  */
 
-import { Task, ProgressState } from './types'
+import { Task, ProgressState } from '../types'
 
 /**
  * Calculate progress based on task completion and weights

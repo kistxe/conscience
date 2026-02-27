@@ -1,5 +1,4 @@
 import { useState } from 'react'
-import { Project } from '../types'
 import './ProjectForm.css'
 
 interface ProjectFormProps {
