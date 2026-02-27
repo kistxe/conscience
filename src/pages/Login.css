@@ -4,7 +4,7 @@
   align-items: center;
   min-height: 100vh;
   width: 100%;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #000000;
 }
 
 .login-card {
@@ -74,8 +74,18 @@
 .btn-submit {
   width: 100%;
   padding: 0.75rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: linear-gradient(135deg,
+    #f3f4f6 0%,
+    #ececec 18%,
+    rgba(255, 215, 0, 0.15) 32%,
+    rgba(255, 105, 180, 0.12) 46%,
+    rgba(135, 206, 235, 0.15) 60%,
+    rgba(152, 251, 152, 0.15) 74%,
+    #f2f2f2 88%,
+    #ededed 100%);
+  background-size: 160% 160%;
+  animation: chromeShift 16s ease-in-out infinite;
+  color: #1f2937;
   border: none;
   border-radius: 8px;
   font-weight: 600;
@@ -83,6 +93,15 @@
   cursor: pointer;
   transition: opacity 0.3s;
   margin-bottom: 1rem;
+}
+
+@keyframes chromeShift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
 }
 
 .btn-submit:hover:not(:disabled) {
@@ -104,7 +123,7 @@
 .btn-toggle {
   background: none;
   border: none;
-  color: #667eea;
+  color: #87ceeb;
   cursor: pointer;
   font-weight: 600;
   text-decoration: none;

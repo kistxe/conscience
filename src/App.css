@@ -63,21 +63,21 @@ body {
 
 .btn-logout {
   padding: 0.5rem 1rem;
-  background-color: #dc2626;
-  color: white;
+  background-color: #87ceeb;
+  color: #1f2937;
   border: none;
   border-radius: 6px;
   cursor: pointer;
   font-weight: 500;
-  transition: background-color 0.3s;
+  transition: opacity 0.3s;
 }
 
 .btn-logout:hover {
-  background-color: #b91c1c;
+  opacity: 0.8;
 }
 
 .btn-logout:active {
-  background-color: #991b1b;
+  opacity: 0.7;
 }
 
 .app-container {
