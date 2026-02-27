@@ -5,6 +5,7 @@ from sqlalchemy.orm import sessionmaker, Session, joinedload
 from contextlib import contextmanager
 from datetime import datetime
 from typing import Optional
+import os
 import uuid
 
 from models import Base, ProjectModel, TaskModel, UserModel
@@ -24,10 +25,20 @@ Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="Guilt Tracker API")
 
+def get_allowed_origins() -> list[str]:
+    local_origins = [
+        "http://localhost:5173",
+        "http://localhost:4173",
+        "http://localhost:5174",
+    ]
+    env_origins = os.getenv("FRONTEND_URL", "")
+    extra_origins = [origin.strip() for origin in env_origins.split(",") if origin.strip()]
+    return local_origins + extra_origins
+
 # CORS configuration
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:4173", "http://localhost:5174"],
+    allow_origins=get_allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
