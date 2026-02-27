@@ -32,8 +32,8 @@ export function Login() {
   return (
     <div className="login-container">
       <div className="login-card">
-        <h1>Guilt Meter</h1>
-        <p className="subtitle">Track your projects and lift the mental load</p>
+        <h1><em>Conscience</em></h1>
+        <p className="subtitle">Lift the mental load</p>
 
         <form onSubmit={handleSubmit}>
           <div className="form-group">

@@ -217,8 +217,8 @@ export function App() {
       <div className="app">
         <header className="app-header">
           <div className="header-left">
-            <h1>Guilt Meter</h1>
-            <p>Track your projects and lift the mental load</p>
+            <h1><em>Conscience</em></h1>
+            <p>Lift the mental load</p>
           </div>
         </header>
         <div className="app-container" style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', flex: 1 }}>
@@ -236,11 +236,11 @@ return (
     <div className="app">
       <header className="app-header">
         <div className="header-left">
-          <h1>Guilt Meter</h1>
-          <p>Track your projects and lift the mental load</p>
+          <h1><em>Conscience</em></h1>
+          <p>Lift the mental load</p>
         </div>
         <div className="header-right">
-          {user && <span className="user-info">Hello, {user.username}!</span>}
+          {user && <span className="user-info">Hello, {user.name}!</span>}
           <button onClick={logout} className="btn-logout">Logout</button>
         </div>
       </header>
