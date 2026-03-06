@@ -1,7 +1,7 @@
 from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, Session, joinedload
+from sqlalchemy.orm import sessionmaker, joinedload
 from contextlib import contextmanager
 from datetime import datetime
 from typing import Optional
